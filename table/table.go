@@ -3,6 +3,7 @@ package table
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 )
 
@@ -21,11 +22,11 @@ func getWidths(header []string, boby [][]string) []int {
 	const spaces = 3
 	widths := []int{}
 	for _, item := range header {
-		widths = append(widths, len(item)+spaces)
+		widths = append(widths, getVisibleLen(item)+spaces)
 	}
 	for _, row := range boby {
 		for i, item := range row {
-			widths[i] = max(widths[i], len(item)+spaces)
+			widths[i] = max(widths[i], getVisibleLen(item)+spaces)
 		}
 	}
 	return widths
@@ -33,10 +34,10 @@ func getWidths(header []string, boby [][]string) []int {
 
 func printTable(header []string, body [][]string, widths []int) {
 	printTop(widths)
-	printRow(header, widths, true)
+	printRow(header, widths)
 	for _, row := range body {
 		printLine(widths)
-		printRow(row, widths, false)
+		printRow(row, widths)
 	}
 	printBottom(widths)
 }
@@ -55,16 +56,12 @@ func printTop(widths []int) {
 	}
 }
 
-func printRow(row []string, widths []int, isHeader bool) {
+func printRow(row []string, widths []int) {
 	fmt.Printf("│")
 	for i := range widths {
-		printFormat := " %-" + strconv.Itoa(widths[i]-1) + "s"
-		if i == 0 {
-			printFormat = " \033[38;5;214m%-" + strconv.Itoa(widths[i]-1) + "s\033[0m"
-		}
-		if isHeader {
-			printFormat = " \033[32m%-" + strconv.Itoa(widths[i]-1) + "s\033[0m"
-		}
+		diff := len(row[i]) - getVisibleLen(row[i])
+		width := widths[i] - 1 + diff
+		printFormat := " %-" + strconv.Itoa(width) + "s"
 		if len(row) > i {
 			fmt.Printf(printFormat, row[i])
 		} else {
@@ -107,15 +104,34 @@ func getValueString(value reflect.Value) string {
 	valueType := value.Kind()
 	switch valueType {
 	case reflect.Slice, reflect.Array:
-		str := "[abc"
+		str := "["
 		for i := 0; i < value.Len(); i++ {
-
+			str += " " + getValueString(value.Index(i))
+			if i != value.Len()-1 {
+				str += ","
+			}
 		}
-		str += "]"
+		str += " ]"
 		return str
-	case reflect.String:
-		return fmt.Sprintf("\"%v\"", value)
 	default:
 		return fmt.Sprintf("%v", value)
 	}
+}
+
+func getVisibleLen(str string) int {
+	re := regexp.MustCompile(`\x1b\[[0-9;]*[mGKH]`)
+	tempStr := re.ReplaceAllString(str, "")
+
+	visible := []rune{}
+	for _, char := range tempStr {
+		if char == '\b' {
+			if len(visible) > 0 {
+				visible = visible[:len(visible)-1]
+			}
+		} else {
+			visible = append(visible, char)
+		}
+	}
+
+	return len(visible)
 }

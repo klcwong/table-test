@@ -9,19 +9,20 @@ func getSliceHeader(data any) []string {
 	value := reflect.ValueOf(data)
 	elementType := value.Type().Elem().Kind()
 	header := []string{}
-	header = append(header, "Index")
+	header = append(header, getColorStr("Index", colors.yellow))
 	switch elementType {
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < value.Len(); i++ {
 			element := value.Index(i)
 			for j := 0; j < element.Len(); j++ {
 				for len(header) <= element.Len() {
-					header = append(header, strconv.Itoa(len(header)-1))
+					title := getColorStr(strconv.Itoa(len(header)-1), colors.green)
+					header = append(header, title)
 				}
 			}
 		}
 	default:
-		header = append(header, "Value")
+		header = append(header, getColorStr("Value", colors.green))
 	}
 	return header
 }
@@ -30,24 +31,19 @@ func getSliceBody(data any) [][]string {
 	value := reflect.ValueOf(data)
 	elementType := value.Type().Elem().Kind()
 	body := [][]string{}
-	switch elementType {
-	case reflect.Slice, reflect.Array:
-		for i := 0; i < value.Len(); i++ {
+	for i := 0; i < value.Len(); i++ {
+		newValues := []string{}
+		newValues = append(newValues, getColorStr(strconv.Itoa(i), colors.yellow))
+		switch elementType {
+		case reflect.Slice, reflect.Array:
 			element := value.Index(i)
-			newValues := []string{}
-			newValues = append(newValues, strconv.Itoa(i))
 			for j := 0; j < element.Len(); j++ {
 				newValues = append(newValues, getValueString(value.Index(i).Index(j)))
 			}
-			body = append(body, newValues)
-		}
-	default:
-		for i := 0; i < value.Len(); i++ {
-			newValues := []string{}
-			newValues = append(newValues, strconv.Itoa(i))
+		default:
 			newValues = append(newValues, getValueString(value.Index(i)))
-			body = append(body, newValues)
 		}
+		body = append(body, newValues)
 	}
 	return body
 }

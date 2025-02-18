@@ -1,9 +1,11 @@
 package main
 
-import "app/table"
+import (
+	"app/table"
+)
 
 func main() {
-	table.Print([][][]int{
-		{{1, 2, 3}, {4, 5, 6}},
-	})
+	data := []string{"Amy", "Bob", "Chris"}
+
+	table.Print(data)
 }
